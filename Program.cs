@@ -1,20 +1,21 @@
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.Seq("http://localhost:5341")
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Host.UseSerilog();
 
 // Configuration source priority orders
 builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddUserSecrets<Program>(optional: true)
     .AddEnvironmentVariables()
-    .AddCommandLine(args)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    .AddCommandLine(args);
 
 // Add services to the container.
 var myApiKey = builder.Configuration["MyAPIKey"];

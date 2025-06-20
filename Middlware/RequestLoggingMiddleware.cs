@@ -15,7 +15,8 @@ public class RequestLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        _logger.LogInformation("Request: {method} {url}", context.Request.Method, context.Request.Path);
+        _logger.LogError("This is an error");
+        _logger.LogInformation("This is information");
         await _next(context);
     }
 }

@@ -22,7 +22,7 @@ public class ErrorHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred.");
+            _logger.LogError(ex, "Middleware - Error Handling");
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("An unexpected error occurred.");
         }

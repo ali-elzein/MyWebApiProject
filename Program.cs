@@ -29,6 +29,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Custom middleware
+app.UseMiddleware<ConditionalLoggingMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<PoweredByMiddleware>();

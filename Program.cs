@@ -19,7 +19,7 @@ builder.Configuration
 
 // Add services to the container.
 var myApiKey = builder.Configuration["MyAPIKey"];
-Console.WriteLine($"MyAPIKey: {myApiKey}");
+// Console.WriteLine($"MyAPIKey: {myApiKey}");
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

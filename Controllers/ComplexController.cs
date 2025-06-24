@@ -11,13 +11,13 @@ namespace MyWebApiProject.Controllers
     {
         public class StudentInfo
         {
-            public string Name { get; set; }
-            public string Address { get; set; }
-            public PrivateInfo[] Confidential { get; set;  }
+            public string? Name { get; set; }
+            public string? Address { get; set; }
+            public PrivateInfo[]? Confidential { get; set;  }
         }
         public class PrivateInfo
         {
-            public string SecretID { get; set; }
+            public string? SecretID { get; set; }
             public int Salary { get; set; }
         }
         [HttpPost("processstudents")]

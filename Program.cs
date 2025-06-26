@@ -1,4 +1,9 @@
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Extensions.Http;
+using System;
+using System.Net.Http;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -22,6 +27,19 @@ var myApiKey = builder.Configuration["MyAPIKey"];
 // Console.WriteLine($"MyAPIKey: {myApiKey}");
 
 builder.Services.AddHttpClient();
+// builder.Services.AddHttpClient("RetryClient")
+//     .AddPolicyHandler(GetRetryPolicy());
+
+// static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+// {
+//     return HttpPolicyExtensions
+//         .HandleTransientHttpError() // handles request timeouts
+//         .WaitAndRetryAsync(
+//             retryCount: 3,
+//             sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
+//         );
+// }
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

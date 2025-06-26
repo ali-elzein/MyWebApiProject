@@ -35,6 +35,7 @@ public class WeatherForecastController : ControllerBase
         .ToArray();
     }
 
+    // New action method to fetch weather data from external URL
     [HttpGet("from-url")]
     public async Task<ActionResult<string>> GetFromUrl([FromQuery] string url)
     {
@@ -45,10 +46,13 @@ public class WeatherForecastController : ControllerBase
 
         try
         {
+            // Make GET request to the provided URL
             var response = await _httpClient.GetAsync(url);
             
+            // Ensure we got a successful response
             response.EnsureSuccessStatusCode();
-        
+            
+
             var content = await response.Content.ReadAsStringAsync();
             return Ok(content);
         }

@@ -23,6 +23,66 @@ public class WeatherForecastController : ControllerBase
         _httpClient = httpClient;
     }
 
+    [HttpGet("success")]
+    public IActionResult GetSuccess()
+    {
+        var forecast = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        {
+            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            TemperatureC = Random.Shared.Next(-20, 55),
+            Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+        }).ToArray();
+
+        return Ok(forecast);
+    }
+
+    [HttpPost("create")]
+    public IActionResult CreateForecast([FromBody] WeatherForecast forecast)
+    {
+        _logger.LogInformation($"Created forecast for {forecast.Date}");
+        
+        return CreatedAtAction(nameof(GetById), new { id = 123 }, forecast); // 201
+    }
+
+    [HttpGet("validate")]
+    public IActionResult GetWithValidation([FromQuery] int days)
+    {
+        if (days <= 0 || days > 30)
+        {
+            return BadRequest("Days must be between 1 and 30"); // 400
+        }
+
+        return Ok($"Valid request for {days} days");
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetById(int id)
+    {
+        if (id != 123)
+        {
+            return NotFound($"Forecast with ID {id} not found"); // 404
+        }
+
+        return Ok(new WeatherForecast
+        {
+            Date = DateOnly.FromDateTime(DateTime.Now),
+            TemperatureC = 25,
+            Summary = "Warm"
+        });
+    }
+
+    [HttpGet("maintenance")]
+    public IActionResult MaintenanceCheck()
+    {
+        return StatusCode(StatusCodes.Status503ServiceUnavailable, 
+            new ProblemDetails
+            {
+                Title = "Service Temporarily Unavailable",
+                Detail = "Please try again in 30 minutes",
+                Status = 503
+            }); // 503
+    }
+
     [HttpGet(Name = "GetWeatherForecast")]
     public IEnumerable<WeatherForecast> Get()
     {

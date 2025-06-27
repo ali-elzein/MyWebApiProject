@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using System.Net.Http; // Needed for HttpClient
 using System.Threading.Tasks; // Needed for async programming
 
@@ -24,7 +25,8 @@ public class WeatherForecastController : ControllerBase
     }
 
     [HttpGet("success")]
-    public IActionResult GetSuccess()
+    // [Produces("application/json")]
+    public IActionResult GetSuccess([FromQuery] string? format)
     {
         var forecast = Enumerable.Range(1, 5).Select(index => new WeatherForecast
         {
@@ -33,8 +35,22 @@ public class WeatherForecastController : ControllerBase
             Summary = Summaries[Random.Shared.Next(Summaries.Length)]
         }).ToArray();
 
-        return Ok(forecast);
+        if (string.IsNullOrEmpty(format))
+        {
+            return StatusCode(406, "Format not specified");
+        }
+
+        return format.ToLower() switch
+        {
+            "json" => Ok(forecast),
+            "xml" => new ObjectResult(forecast)
+            {
+                ContentTypes = new MediaTypeCollection { "application/xml" }
+            },
+            _ => StatusCode(406, "Unsupported format")
+        };
     }
+
 
     [HttpPost("create")]
     public IActionResult CreateForecast([FromBody] WeatherForecast forecast)

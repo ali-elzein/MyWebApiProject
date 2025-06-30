@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.FeatureManagement;
+using Microsoft.FeatureManagement.Mvc;
 using System.Net.Http; // Needed for HttpClient
 using System.Threading.Tasks; // Needed for async programming
 
@@ -16,12 +18,14 @@ public class WeatherForecastController : ControllerBase
 
     private readonly ILogger<WeatherForecastController> _logger;
     private readonly HttpClient _httpClient; // Add HttpClient for making HTTP requests
+    private readonly IFeatureManager _featureManager;
 
     // Modify constructor to inject HttpClient
-    public WeatherForecastController(ILogger<WeatherForecastController> logger, HttpClient httpClient)
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, HttpClient httpClient, IFeatureManager featureManager)
     {
         _logger = logger;
         _httpClient = httpClient;
+        _featureManager = featureManager;
     }
 
     [HttpGet("success")]
@@ -109,6 +113,15 @@ public class WeatherForecastController : ControllerBase
             Summary = Summaries[Random.Shared.Next(Summaries.Length)]
         })
         .ToArray();
+    }
+
+    [HttpGet("timed-endpoint")]
+    [ServiceFilter(typeof(ExecutionTimeFilter))]
+    [FeatureGate("TimeTracking")]
+    public IActionResult GetTimedData()
+    {
+        System.Threading.Thread.Sleep(new Random().Next(100, 300));
+        return Ok(new { Message = "This execution was timed" });
     }
 
     // New action method to fetch weather data from external URL

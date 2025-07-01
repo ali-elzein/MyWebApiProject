@@ -4,6 +4,11 @@ using Microsoft.FeatureManagement;
 using Microsoft.FeatureManagement.Mvc;
 using System.Net.Http; // Needed for HttpClient
 using System.Threading.Tasks; // Needed for async programming
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace MyWebApiProject.Controllers;
 
@@ -19,13 +24,15 @@ public class WeatherForecastController : ControllerBase
     private readonly ILogger<WeatherForecastController> _logger;
     private readonly HttpClient _httpClient; // Add HttpClient for making HTTP requests
     private readonly IFeatureManager _featureManager;
+    private readonly IConfiguration _config;
 
     // Modify constructor to inject HttpClient
-    public WeatherForecastController(ILogger<WeatherForecastController> logger, HttpClient httpClient, IFeatureManager featureManager)
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, HttpClient httpClient, IFeatureManager featureManager, IConfiguration config)
     {
         _logger = logger;
         _httpClient = httpClient;
         _featureManager = featureManager;
+        _config = config;
     }
 
     [HttpGet("success")]
@@ -54,7 +61,6 @@ public class WeatherForecastController : ControllerBase
             _ => StatusCode(406, "Unsupported format")
         };
     }
-
 
     [HttpPost("create")]
     public IActionResult CreateForecast([FromBody] WeatherForecast forecast)
@@ -114,6 +120,40 @@ public class WeatherForecastController : ControllerBase
         })
         .ToArray();
     }
+
+    [HttpGet("admin")]
+    [Authorize(Policy = "AdminOnly")]
+    public IActionResult Admin() => Ok("Admin secret data");
+
+[HttpGet("get-token")]
+[AllowAnonymous]
+public IActionResult GetToken([FromQuery] string role = "User")
+{
+    var token = GenerateTokenWithRole("test-user", role);
+    return Ok(new { token });
+}
+
+private string GenerateTokenWithRole(string username, string role)
+{
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+    var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.Name, username),
+        new Claim(ClaimTypes.Role, role)
+    };
+
+    var token = new JwtSecurityToken(
+        issuer: _config["Jwt:Issuer"],
+        audience: _config["Jwt:Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddHours(1),
+        signingCredentials: credentials
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
 
     [HttpGet("timed-endpoint")]
     [ServiceFilter(typeof(ExecutionTimeFilter))]

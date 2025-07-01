@@ -6,6 +6,10 @@ using System;
 using System.Net.Http;
 using Microsoft.FeatureManagement;
 using Microsoft.FeatureManagement.FeatureFilters;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization; // Added for clarity, though often implicitly available
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -29,18 +33,32 @@ var myApiKey = builder.Configuration["MyAPIKey"];
 // Console.WriteLine($"MyAPIKey: {myApiKey}");
 
 builder.Services.AddHttpClient();
-// builder.Services.AddHttpClient("RetryClient")
-//     .AddPolicyHandler(GetRetryPolicy());
 
-// static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-// {
-//     return HttpPolicyExtensions
-//         .HandleTransientHttpError() // handles request timeouts
-//         .WaitAndRetryAsync(
-//             retryCount: 3,
-//             sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
-//         );
-// }
+// Configure JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtKey = builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("JWT Key not configured");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true, 
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true, 
+            ValidIssuer = builder.Configuration["Jwt:Issuer"], 
+            ValidAudience = builder.Configuration["Jwt:Audience"], 
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)), 
+            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        };
+    });
+
+// Configure Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+});
 
 builder.Services.AddControllers().AddXmlSerializerFormatters();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -56,6 +74,8 @@ app.UseMiddleware<ConditionalLoggingMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<PoweredByMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 
 // Configure the HTTP request pipeline.
@@ -67,8 +87,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 
